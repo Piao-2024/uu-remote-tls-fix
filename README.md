@@ -93,6 +93,7 @@ uu-remote-tls-fix/
 ├── src/
 │   └── UUTlsFragmenter.cs     # 零依赖原生 C#/.NET 本地 TLS Record 分片服务独立源码
 ├── LICENSE                    # MIT 开源许可证
+├── .gitattributes             # Git 行尾配置（强制 .bat/.ps1 使用 CRLF 换行）
 ├── .gitignore                 # Git 忽略规则配置
 └── README.md                  # 项目说明文档
 ```
