@@ -1,6 +1,9 @@
 # Runtime logs & compiled binaries
 *.log
 *.exe
+dist/
+macos/uu-tls-fragmenter
+macos/*.test
 
 # Python cache
 __pycache__/

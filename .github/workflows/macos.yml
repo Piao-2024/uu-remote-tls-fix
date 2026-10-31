@@ -1,0 +1,65 @@
+name: macOS
+
+on:
+  pull_request:
+  push:
+    branches: [main, 'feat/macos-support']
+    tags: ['macos-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: macos/go.mod
+          cache: false
+      - name: Test and vet
+        working-directory: macos
+        run: |
+          go test -race ./...
+          go vet ./...
+      - name: Test installer lifecycle
+        run: |
+          bash -n install-macos.sh uninstall-macos.sh test-macos.sh tests/macos-scripts.sh
+          bash tests/macos-scripts.sh
+      - name: Build and package both architectures
+        env:
+          BUILD_VERSION: ${{ github.ref_name }}
+        run: |
+          mkdir -p dist
+          for arch in arm64 amd64; do
+            package_dir="${RUNNER_TEMP}/uu-macos-${arch}"
+            mkdir -p "$package_dir/docs"
+            (cd macos && CGO_ENABLED=0 GOOS=darwin GOARCH="$arch" go build -trimpath -ldflags "-s -w -X main.version=${BUILD_VERSION}" -o "$package_dir/uu-tls-fragmenter" .)
+            cp install-macos.sh uninstall-macos.sh test-macos.sh LICENSE "$package_dir/"
+            cp docs/macos.md "$package_dir/docs/"
+            tar -czf "dist/uu-remote-tls-fix-macos-${arch}.tar.gz" -C "$package_dir" .
+          done
+          (cd dist && shasum -a 256 ./*.tar.gz > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-packages
+          path: dist/*
+  draft-release:
+    if: startsWith(github.ref, 'refs/tags/macos-v')
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-packages
+          path: dist
+      - name: Create a draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh release create "$RELEASE_TAG" dist/* --draft --verify-tag --title "macOS $RELEASE_TAG" --generate-notes
