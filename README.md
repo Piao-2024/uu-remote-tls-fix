@@ -1,8 +1,8 @@
 # UU Remote TLS Fix — 校园网 UU 远程 TLS 握手阻断一键修复工具
 
 <p align="left">
-  <img src="https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011-0078D6?logo=windows" alt="Windows 10/11" />
-  <img src="https://img.shields.io/badge/Dependencies-Zero%20(Built--in%20.NET)-2EA44F" alt="Zero Dependencies" />
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-0078D6" alt="Windows / macOS" />
+  <img src="https://img.shields.io/badge/Runtime-.NET%20%7C%20Native%20Go-2EA44F" alt="Windows .NET / macOS native executable" />
   <img src="https://img.shields.io/badge/Mode-100%25%20Local%20Direct-008080" alt="Local Direct" />
   <img src="https://img.shields.io/badge/License-MIT-blue" alt="MIT License" />
 </p>
@@ -11,7 +11,29 @@
 
 ---
 
-## ⚡ 3 秒极简使用（任选其一）
+## macOS 使用
+
+支持 macOS 12+，提供 Apple Silicon 和 Intel 构建。Mac 主控连接其他电脑已在
+UU 远程 4.42.0 上验证。源码安装需要 Go 1.25+；预编译程序无需额外运行时。
+
+```bash
+# 在下载或克隆后的仓库目录执行，不要加 sudo
+bash install-macos.sh
+```
+
+然后在 **UU 远程 → 设置 → 网络 → 代理设置** 中启用手动 SOCKS5：
+地址 `127.0.0.1`，端口 `17899`，用户名和密码留空。
+
+```bash
+bash test-macos.sh
+# 卸载前，先在 UU 中停用代理或恢复原设置
+bash uninstall-macos.sh
+```
+
+macOS 版不修改系统代理、hosts、DNS 或 UU 配置，也不提供 Windows 版的 LAN DNS / 443
+透明接入。[完整说明、预编译安装、支持范围及排错](docs/macos.md)。
+
+## ⚡ Windows 3 秒极简使用（任选其一）
 
 ### 方式一：PowerShell 一行命令在线一键修复（推荐，无需下载压缩包）
 
@@ -49,7 +71,7 @@
 
 ---
 
-## 🛠️ 工作原理（纯本机回环闭环 + 物理网卡直连）
+## 🛠️ Windows 工作原理（纯本机回环闭环 + 物理网卡直连）
 
 ```text
 ┌───────────────────────────────────────────────────────────────────────────┐
@@ -74,7 +96,7 @@
 └───────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 核心特性
+### Windows 核心特性
 
 - **零外部依赖，免安装 Python**：利用每台 Windows 10/11 系统自带的 `.NET Framework csc.exe` 在本地即时编译出仅 **24 KB** 的原生无窗口程序 `%LOCALAPPDATA%\UURemoteTlsFix\UUTlsFragmenter.exe`，无需安装任何开发环境或第三方软件即可直接运行。
 - **符合 TLS 协议规范的双帧切分**：依据 TLS 记录层标准（RFC 5246 / RFC 8446），将单个握手消息拆分为两个连续的 TLS Record 帧发送，既解决了网关设备对单帧 SNI 的误拦截，又使远端服务器能够标准重组并完成握手。
@@ -88,6 +110,13 @@
 uu-remote-tls-fix/
 ├── install.ps1                # 一键安装/修复主脚本（内嵌 C# 源码，支持 irm ... | iex 在线执行）
 ├── uninstall.ps1              # 一键卸载与恢复出厂默认脚本（支持 irm ... | iex 在线执行）
+├── install-macos.sh           # macOS 安装和当前用户登录自启动
+├── uninstall-macos.sh         # macOS 停止服务并卸载
+├── test-macos.sh              # macOS 六端点 HTTPS 检测
+├── macos/                    # 标准库 Go 实现及协议测试
+├── docs/macos.md             # macOS 完整使用说明
+├── tests/macos-scripts.sh    # 安装/卸载生命周期测试
+├── .github/workflows/macos.yml # macOS CI、双架构构建及 Release 草稿
 ├── 一键修复UU远程.bat          # Windows 双击一键安装/修复启动器
 ├── 一键卸载恢复.bat            # Windows 双击一键卸载并恢复默认设置
 ├── src/
@@ -100,7 +129,7 @@ uu-remote-tls-fix/
 
 ---
 
-## 📊 覆盖的 UU 远程端点与实测表现
+## 📊 Windows 覆盖端点与原项目实测表现
 
 脚本部署最后一步会自动对以下 6 个核心端点执行端到端 TLS 握手测速：
 
@@ -115,7 +144,7 @@ uu-remote-tls-fix/
 
 ---
 
-## ❓ 常见问题 (FAQ)
+## ❓ Windows 常见问题 (FAQ)
 
 1. **运行脚本需要提前安装 Python 或 Git 吗？**
    不需要。脚本调用的是 Windows 10/11 系统出厂自带的 PowerShell 与 `.NET Framework`，零第三方依赖。
